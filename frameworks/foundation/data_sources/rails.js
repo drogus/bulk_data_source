@@ -69,7 +69,7 @@ SC.RailsDataSource = SC.DataSource.extend(
         }
       }
     } else {
-      for(var i = 0; i < storeKeys; i++) {
+      for(var i = 0; i < storeKeys.length; i++) {
         store.dataSourceDidError(storeKeys[i], response);
       }
     }
@@ -116,7 +116,7 @@ SC.RailsDataSource = SC.DataSource.extend(
         }
       }
     } else {
-      for(var i = 0; i < storeKeys; i++) {
+      for(var i = 0; i < storeKeys.length; i++) {
         store.dataSourceDidError(storeKeys[i], response);
       }
     }
@@ -143,7 +143,6 @@ SC.RailsDataSource = SC.DataSource.extend(
       }
     }
 
-    // TODO: where to save that url?
     SC.Request.postUrl(store.bulkApiUrl)
               .notify(this, 'createRecordsDidComplete', store, recordTypes, storeKeys)
               .json().send(records);
@@ -160,11 +159,16 @@ SC.RailsDataSource = SC.DataSource.extend(
 
         for(var j = 0; j < records.length; j++) {
           var record = records[j];
-          store.dataSourceDidComplete(record["_storeKey"], null, record["id"]);
+
+          if(record['id'] === null || record['id'] === undefined) {
+            store.dataSourceDidError(record["_storeKey"], response);
+          } else {
+            store.dataSourceDidComplete(record["_storeKey"], null, record["id"]);
+          }
         }
       }
     } else {
-      for(var i = 0; i < storeKeys; i++) {
+      for(var i = 0; i < storeKeys.length; i++) {
         store.dataSourceDidError(storeKeys[i], response);
       }
     }
@@ -210,7 +214,7 @@ SC.RailsDataSource = SC.DataSource.extend(
         }
       }
     } else {
-      for(var i = 0; i < storeKeys; i++) {
+      for(var i = 0; i < storeKeys.length; i++) {
         store.dataSourceDidError(storeKeys[i], response);
       }
     }

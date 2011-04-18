@@ -24,6 +24,9 @@ module TestApp
     routes.draw do
       sproutcore("/api/bulk")
       match "/clear_database" => "main#clear_database"
+      post  "/stub" => "stubs#create"
+      get   "/stub/last_request" => "stubs#last_request"
+      match "/stubs:url" => "stubs#get", :constraints => { :url => /.*/ }
     end
 
     config.active_support.deprecation = :notify
@@ -32,6 +35,33 @@ module TestApp
 end
 
 class Todo < ActiveRecord::Base
+end
+
+class StubsController < ActionController::Base
+  class << self
+    attr_accessor :last_request, :next_response
+  end
+  delegate :next_response, :next_response=, :to => "self.class"
+
+  def create
+    self.next_response = params.slice(:status, :body)
+
+    render :nothing => true
+  end
+
+  def last_request
+    render :json => self.class.last_request
+  end
+
+  def get
+    self.class.last_request = {
+      :body   => params.except(:controller, :action, :url),
+      :method => request.request_method,
+      :url    => params[:url]
+    }
+
+    render :json => next_response[:body], :status => next_response[:status]
+  end
 end
 
 class MainController < ActionController::Base
@@ -63,5 +93,5 @@ Thread.abort_on_exception = true
 Thread.new do
   # TODO: Thin fails to start, probably because it's also used by sproutcore, check if there
   #       is any possibility to run 2 instances in one process
-  Rack::Handler::WEBrick.run(Rails.application, :Port => '9021', :AccessLog => [], :Logger => WEBrick::Log::new(nil, 0))
+  Rack::Handler::WEBrick.run(Rails.application, :Port => '9021', :AccessLog => [], :Logger => WEBrick::Log::new(STDOUT, 0))
 end.run
