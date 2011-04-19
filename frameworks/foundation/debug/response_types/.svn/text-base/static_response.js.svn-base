@@ -1,0 +1,5 @@
+FakeServer.StaticResponse = SC.Object.extend({
+  value: function() {
+    return this.get('response');
+  }
+});

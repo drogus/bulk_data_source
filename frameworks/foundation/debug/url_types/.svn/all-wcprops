@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/!svn/ver/73314/TABWEB/trunk/apps/ebay/debug/fake_server/url_types
+END
+string_url.js
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/73314/TABWEB/trunk/apps/ebay/debug/fake_server/url_types/string_url.js
+END
+base.js
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/73314/TABWEB/trunk/apps/ebay/debug/fake_server/url_types/base.js
+END
+regular_expression_url.js
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/!svn/ver/73314/TABWEB/trunk/apps/ebay/debug/fake_server/url_types/regular_expression_url.js
+END
