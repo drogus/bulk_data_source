@@ -53,12 +53,18 @@ function observeUntilStatus(object, s, method) {
   return observeUntil(object, 'status', function() { return object.get('status') & s; }, method);
 }
 
+function observeOnce(object, key, method) {
+  return observeUntil(object, key, function() { return true; }, method);
+}
+
 function observeUntil(object, key, until, method) {
   var trigger = {};
   var callback = function() {
     if(until()) {
       object.removeObserver(key, callback);
-      method();
+      if(method) {
+        method();
+      }
       trigger.fired = true;
     }
   };
@@ -67,15 +73,35 @@ function observeUntil(object, key, until, method) {
   return trigger;
 }
 
-function observeOnce(object, key, method) {
-  var trigger = {};
-  var callback = function() {
-    object.removeObserver(key, callback);
-    method();
-    trigger.fired = true;
-  };
-  object.addObserver(key, callback);
-  return trigger;
+function createRecords(records, callback) {
+  SC.RunLoop.begin();
+
+  var newRecords = [],
+      body = {};
+
+  for(var i = 0; i < records.length; i++) {
+    var recordType = records[i][0],
+        data = records[i][1],
+        resourceName = records[i].pluralResourceName;
+
+    var record = store.createRecord(recordType, data);
+    newRecords.push(record);
+
+    if(body[resourceName] === undefined) {
+      body[resourceName] = [];
+    }
+    data._storeKey = record.get('storeKey');
+    body[resourceName].push(data);
+  }
+
+  FakeServer.registerUrl(/\/api\/bulk/, body);
+  SC.RunLoop.end();
+
+  var observers = $.map(newRecords, function(r) {
+    observeUntilStatus(r, SC.Record.READY);
+  });
+
+  when.apply(this, observers).then(callback);
 }
 
 module("RailsDataSource", {
@@ -538,24 +564,10 @@ test("fetching records", function() {
   expect(3);
   stop(5000);
 
-  SC.RunLoop.begin();
-  var todo1 = store.createRecord(Todo, {title: "Foo"});
-  var todo2 = store.createRecord(Todo, {title: "Bar"});
-
-  var body = {
-    todos: [
-      {id: 10, title: "Foo", done: false, _storeKey: todo1.get('storeKey')},
-      {id: 11, title: "Bar", done: true, _storeKey: todo2.get('storeKey')}
-    ]
-  };
-
-  FakeServer.registerUrl(/\/api\/bulk/, body);
-  SC.RunLoop.end();
-
-  when(
-    observeUntilStatus(todo1, SC.Record.READY, function() {}),
-    observeUntilStatus(todo2, SC.Record.READY, function() {})
-  ).then(function() {
+  createRecords([
+    [Todo, {title: "Foo", id: 10}],
+    [Todo, {title: "Bar", id: 11}]
+  ], function() {
     var body = {
       todos: [
         {id: 10, title: "Foo", done: false},
