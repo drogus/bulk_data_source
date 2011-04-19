@@ -1,9 +1,3 @@
-if ENV["TESTS"]
-  # we're running tests, run rack app for it
-  require File.expand_path('../lib/test_app', __FILE__)
-  ENV["TESTS"] = nil
-end
-
 config :all,
   :required => ['sproutcore/datastore'],
   :test_required  => ['sproutcore/foundation', 'sproutcore/datastore'],
