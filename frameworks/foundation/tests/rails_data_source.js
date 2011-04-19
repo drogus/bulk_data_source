@@ -30,7 +30,7 @@ function when() {
 
   return {
     then: function(fn) {
-      var interval = setInterval(function() {
+      var callback = function() {
         var all = true;
         for(i = 0; i < triggers.length; i++) {
           if(!triggers[i].fired) {
@@ -38,10 +38,13 @@ function when() {
           }
         }
         if(all) {
-          clearInterval(interval);
           fn();
+        } else {
+          setTimeout(callback, 40);
         }
-      }, 50);
+      };
+
+      callback();
     }
   };
 }
@@ -89,49 +92,9 @@ module("RailsDataSource", {
   }
 });
 
-test("fetching records", function() {
-  expect(3);
-  stop(5000);
-
-  SC.RunLoop.begin();
-  var todo1 = store.createRecord(Todo, {title: "Foo"});
-  var todo2 = store.createRecord(Todo, {title: "Bar"});
-
-  var body = {
-    todos: [
-      {id: 10, title: "Foo", done: false, _storeKey: todo1.get('storeKey')},
-      {id: 11, title: "Bar", done: true, _storeKey: todo2.get('storeKey')}
-    ]
-  };
-
-  FakeServer.registerUrl(/\/api\/bulk/, body);
-  SC.RunLoop.end();
-
-  observeOnce(todo1, 'id', function() {
-    var body = {
-      todos: [
-        {id: 10, title: "Foo", done: false},
-        {id: 11, title: "Bar", done: true}
-      ]
-    };
-    FakeServer.registerUrl(/\/api\/bulk/, body);
-
-    var records = store.find(Todo);
-    records.addObserver('status', function() {
-      var titles = records.map(function(r) { return r.get('title'); }).sort();
-      equals(titles[0], "Bar");
-      equals(titles[1], "Foo");
-      equals(titles.length, 2);
-
-      start();
-    });
-  });
-});
-
-
 test("createRecords: pass _storeKey on create (for records identification)", function() {
   expect(5);
-  stop(5000);
+  stop(10000);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true});
@@ -146,15 +109,16 @@ test("createRecords: pass _storeKey on create (for records identification)", fun
   };
 
   FakeServer.registerUrl(/\/api\/bulk/, body);
-
   SC.RunLoop.end();
 
-  observeOnce(todo, 'id', function() {
-    start();
-
-    equals(todo.get('id'), 10);
-    equals(project.get('id'), 5);
-
+  when(
+    observeOnce(todo, 'id', function() {
+      equals(todo.get('id'), 10);
+    }),
+    observeOnce(project, 'id', function() {
+      equals(project.get('id'), 5);
+    })
+  ).then(function() {
     var request = FakeServer.server.get('lastRequest');
     var body = {
       'todos': [
@@ -166,6 +130,8 @@ test("createRecords: pass _storeKey on create (for records identification)", fun
     equals(SC.json.encode(request.get('body')), SC.json.encode(body));
     equals(request.get('address'), '/api/bulk');
     equals(request.get('type'), 'POST');
+
+    start();
   });
 });
 
@@ -202,16 +168,26 @@ test("createRecords: call dataSourceDidError on invalid records", function() {
   equals(store.statusString(invalidTodo2.get('storeKey')), 'BUSY_CREATING');
   equals(store.statusString(invalidProject.get('storeKey')), 'BUSY_CREATING');
 
-  todo.addObserver('id', function() {
-    equals(todo.get('id'), 10);
-    equals(invalidTodo.get('id'), null);
-    equals(store.statusString(invalidTodo.get('storeKey')), 'ERROR');
-    equals(invalidTodo2.get('id'), null);
-    equals(store.statusString(invalidTodo2.get('storeKey')), 'ERROR');
-    equals(project.get('id'), 5);
-    equals(invalidProject.get('id'), null);
-    equals(store.statusString(invalidProject.get('storeKey')), 'ERROR');
-
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {
+      equals(todo.get('id'), 10);
+    }),
+    observeUntilStatus(invalidTodo,  SC.Record.ERROR, function() {
+      equals(invalidTodo.get('id'), null);
+      equals(store.statusString(invalidTodo.get('storeKey')), 'ERROR');
+    }),
+    observeUntilStatus(invalidTodo2,  SC.Record.ERROR, function() {
+      equals(invalidTodo2.get('id'), null);
+      equals(store.statusString(invalidTodo2.get('storeKey')), 'ERROR');
+    }),
+    observeUntilStatus(project, SC.Record.READY, function() {
+      equals(project.get('id'), 5);
+    }),
+    observeUntilStatus(invalidProject,  SC.Record.ERROR, function() {
+      equals(invalidProject.get('id'), null);
+      equals(store.statusString(invalidProject.get('storeKey')), 'ERROR');
+    })
+  ).then(function() {
     var request = FakeServer.server.get('lastRequest');
 
     var body = {
@@ -224,8 +200,7 @@ test("createRecords: call dataSourceDidError on invalid records", function() {
         {'name': "jQuery", '_storeKey': invalidProject.get('storeKey') }
       ]
     };
-    console.log(SC.json.encode(body));
-    console.log(SC.json.encode(request.get('body')));
+
     equals(SC.json.encode(body), SC.json.encode(request.get('body')));
     equals(request.get('address'), '/api/bulk');
     equals(request.get('type'), 'POST');
@@ -260,7 +235,7 @@ test("createRecords: call dataSourceDidError on all records in case of not valid
 });
 
 test("updating records", function() {
-  expect(4);
+  expect(5);
   stop(5000);
 
   SC.RunLoop.begin();
@@ -278,8 +253,10 @@ test("updating records", function() {
 
   SC.RunLoop.end();
 
-  // wait for setting id on both projects and todos
-  observeOnce(todo, 'id', function() {
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {}),
+    observeUntilStatus(project, SC.Record.READY, function() {})
+  ).then(function() {
     var body = {
       'todos': [ {'id': 10, 'title': 'Foo', done: true, '_storeKey': todo.get('storeKey')} ]
     };
@@ -289,8 +266,9 @@ test("updating records", function() {
     todo.set('title', 'Bar');
     SC.RunLoop.end();
 
-    observeOnce(todo, 'status', function() {
+    observeUntilStatus(todo, SC.Record.READY, function() {
       equals(todo.get('title'), "Bar");
+      equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
 
       var request = FakeServer.server.get('lastRequest');
       var body = {
@@ -328,7 +306,11 @@ test("updateRecords: call dataSourceDidError on invalid records", function() {
 
   SC.RunLoop.end();
 
-  observeOnce(todo, 'id', function() {
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {}),
+    observeUntilStatus(todo2, SC.Record.READY, function() {}),
+    observeUntilStatus(project, SC.Record.READY, function() {})
+  ).then(function() {
     var body = {
       'todos': [
         {'id': 10, 'title': 'Bar', done: true, '_storeKey': todo.get('storeKey')}
@@ -381,7 +363,10 @@ test("updateRecords: call dataSourceDidError on all records in case of not valid
 
   SC.RunLoop.end();
 
-  observeOnce(todo, 'id', function() {
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {}),
+    observeUntilStatus(project, SC.Record.READY, function() {})
+  ).then(function() {
     FakeServer.registerUrl(/\/api\/bulk/, {}, 500);
 
     SC.RunLoop.begin();
@@ -420,7 +405,10 @@ test("destroying records", function() {
   FakeServer.registerUrl(/\/api\/bulk/, body);
   SC.RunLoop.end();
 
-  observeOnce(todo, 'id', function() {
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {}),
+    observeUntilStatus(project, SC.Record.READY, function() {})
+  ).then(function() {
     var body = {
       'todos': [10],
       'projects': [5]
@@ -510,7 +498,10 @@ test("destroyRecords: call dataSourceDidError on all records in case of not vali
   FakeServer.registerUrl(/\/api\/bulk/, body);
   SC.RunLoop.end();
 
-  observeOnce(todo, 'id', function() {
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {}),
+    observeUntilStatus(project, SC.Record.READY, function() {})
+  ).then(function() {
     FakeServer.registerUrl(/\/api\/bulk/, {}, 500);
 
     SC.RunLoop.begin();
@@ -526,6 +517,48 @@ test("destroyRecords: call dataSourceDidError on all records in case of not vali
         equals(store.statusString(project.get('storeKey')), 'ERROR');
       })
     ).then(function() {
+      start();
+    });
+  });
+});
+
+test("fetching records", function() {
+  expect(3);
+  stop(5000);
+
+  SC.RunLoop.begin();
+  var todo1 = store.createRecord(Todo, {title: "Foo"});
+  var todo2 = store.createRecord(Todo, {title: "Bar"});
+
+  var body = {
+    todos: [
+      {id: 10, title: "Foo", done: false, _storeKey: todo1.get('storeKey')},
+      {id: 11, title: "Bar", done: true, _storeKey: todo2.get('storeKey')}
+    ]
+  };
+
+  FakeServer.registerUrl(/\/api\/bulk/, body);
+  SC.RunLoop.end();
+
+  when(
+    observeOnce(todo1, 'id', function() {}),
+    observeOnce(todo2, 'id', function() {})
+  ).then(function() {
+    var body = {
+      todos: [
+        {id: 10, title: "Foo", done: false},
+        {id: 11, title: "Bar", done: true}
+      ]
+    };
+    FakeServer.registerUrl(/\/api\/bulk/, body);
+
+    var records = store.find(Todo);
+    observeOnce(records, 'status', function() {
+      var titles = records.map(function(r) { return r.get('title'); }).sort();
+      equals(titles[0], "Bar");
+      equals(titles[1], "Foo");
+      equals(titles.length, 2);
+
       start();
     });
   });
