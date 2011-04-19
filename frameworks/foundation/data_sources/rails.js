@@ -219,13 +219,24 @@ SC.RailsDataSource = SC.DataSource.extend(
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
-            records = body[recordType.pluralResourceName];
+            resourceName = recordType.pluralResourceName;
+            records = body[resourceName];
 
-        for(var j = 0; j < records.length; j++) {
-          var id = records[j],
-              storeKey = recordType.storeKeyFor(id);
+        if(records) {
+          for(var j = 0; j < records.length; j++) {
+            var id = records[j],
+                storeKey = recordType.storeKeyFor(id);
 
-          store.dataSourceDidDestroy(storeKey);
+            store.dataSourceDidDestroy(storeKey);
+          }
+        }
+
+        var errors;
+        if(body.errors && (errors = body.errors[resourceName])) {
+          console.log(errors);
+          for (var storeKey in errors) {
+            store.dataSourceDidError(storeKey, errors[storeKey]);
+          }
         }
       }
     } else {

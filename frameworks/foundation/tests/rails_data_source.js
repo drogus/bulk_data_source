@@ -441,43 +441,55 @@ test("destroying records", function() {
   });
 });
 
-// test("destroyRecords: call dataSourceDidError on invalid records", function() {
-//   expect(2);
-//   stop(5000);
+test("destroyRecords: call dataSourceDidError on invalid records", function() {
+  expect(2);
+  stop(5000);
 
-//   SC.RunLoop.begin();
-//   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
-//       project = store.createRecord(Project, {name: "Sproutcore todos"});
+  SC.RunLoop.begin();
+  var todo = store.createRecord(Todo, {title: "Foo", done: true}),
+      project = store.createRecord(Project, {name: "Sproutcore todos"});
 
-//   var body = {
-//     'todos': [
-//       {'id': 10, 'title': 'Foo', done: true, '_storeKey': todo.get('storeKey')}
-//     ], 'projects': [
-//       {'id': 5, 'name': "Sproutcore todos", '_storeKey': project.get('storeKey') }
-//     ]
-//   };
+  var body = {
+    'todos': [
+      {'id': 10, 'title': 'Foo', done: true, '_storeKey': todo.get('storeKey')}
+    ], 'projects': [
+      {'id': 5, 'name': "Sproutcore todos", '_storeKey': project.get('storeKey') }
+    ]
+  };
+  FakeServer.registerUrl(/\/api\/bulk/, body);
+  SC.RunLoop.end();
 
-//   stubNextResponse({body: body}, function() {
-//     SC.RunLoop.end();
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {}),
+    observeUntilStatus(project, SC.Record.READY, function() {})
+  ).then(function() {
+    var body = {
+      'errors': {
+        'todos': {},
+        'projects': {}
+      }
+    };
+    body['errors']['todos'][todo.get('storeKey')] = {'base': ["can't be deleted"]};
+    body['errors']['projects'][project.get('storeKey')] = {'base': ["can't be deleted"]};
+    FakeServer.registerUrl(/\/api\/bulk/, body);
 
-//     todo.addObserver('id', function() {
-//       var body = {};
+    SC.RunLoop.begin();
+    todo.destroy();
+    project.destroy();
+    SC.RunLoop.end();
 
-//       SC.RunLoop.begin();
-//       todo.destroy();
-//       project.destroy();
-
-//       stubNextResponse({body: body}, function() {
-//         SC.RunLoop.end();
-
-//         observeOnce(todo, 'status', function() {
-//           equals(store.statusString(todo.get('storeKey')), 'ERROR');
-//           equals(store.statusString(project.get('storeKey')), 'ERROR');
-//         });
-//       });
-//     });
-//   });
-// });
+    when(
+      observeUntilStatus(todo, SC.Record.ERROR, function() {
+        equals(store.statusString(todo.get('storeKey')), 'ERROR');
+      }),
+      observeUntilStatus(project, SC.Record.ERROR, function() {
+        equals(store.statusString(project.get('storeKey')), 'ERROR');
+      })
+    ).then(function() {
+      start();
+    });
+  });
+});
 
 
 test("destroyRecords: call dataSourceDidError on all records in case of not valid response", function() {
