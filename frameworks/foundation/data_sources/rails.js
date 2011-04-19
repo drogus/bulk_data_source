@@ -58,6 +58,7 @@ SC.RailsDataSource = SC.DataSource.extend(
   },
 
   updateRecordsDidComplete: function(response, store, recordTypes, storeKeys) {
+    var usedStoreKeys = [];
     if(SC.ok(response) && response.get('status') === 200) {
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
@@ -65,16 +66,24 @@ SC.RailsDataSource = SC.DataSource.extend(
             resourceName = recordType.pluralResourceName,
             records = body[resourceName];
 
-        for(var j = 0; j < records.length; j++) {
-          var storeKey = recordType.storeKeyFor(records[j]["id"]);
-          store.dataSourceDidComplete(storeKey);
+        if(records) {
+          for(var j = 0; j < records.length; j++) {
+            var storeKey = recordType.storeKeyFor(records[j]["id"]);
+            store.dataSourceDidComplete(storeKey);
+            usedStoreKeys.push(storeKey);
+          }
         }
         var errors;
         if(body.errors && (errors = body.errors[resourceName])) {
           for (var storeKey in errors) {
             store.dataSourceDidError(storeKey, errors[storeKey]);
+            usedStoreKeys.push(storeKey);
           }
         }
+      }
+      this._subtract(storeKeys, usedStoreKeys);
+      for(var j = 0; j < storeKeys.length; j++) {
+        store.dataSourceDidError(storeKeys[j], 'No data in response');
       }
     } else {
       for(var i = 0; i < storeKeys.length; i++) {
@@ -82,6 +91,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       }
     }
   },
+
   // ..........................................................
   // RECORD SUPPORT
   //
@@ -159,6 +169,7 @@ SC.RailsDataSource = SC.DataSource.extend(
   },
 
   createRecordsDidComplete: function(response, store, recordTypes, storeKeys) {
+    var usedStoreKeys = [];
     if(SC.ok(response) && response.get('status') === 200) {
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
@@ -166,21 +177,29 @@ SC.RailsDataSource = SC.DataSource.extend(
             resourceName = recordType.pluralResourceName;
             records = body[resourceName];
 
-        for(var j = 0; j < records.length; j++) {
-          var record = records[j];
+        if(records) {
+          for(var j = 0; j < records.length; j++) {
+            var record = records[j];
 
-          if(record['id'] === null || record['id'] === undefined) {
-            store.dataSourceDidError(record["_storeKey"], response);
-          } else {
-            store.dataSourceDidComplete(record["_storeKey"], null, record["id"]);
+            if(record['id'] === null || record['id'] === undefined) {
+              store.dataSourceDidError(record["_storeKey"], response);
+            } else {
+              store.dataSourceDidComplete(record["_storeKey"], null, record["id"]);
+            }
+            usedStoreKeys.push(record['_storeKey']);
           }
         }
         var errors;
         if(body.errors && (errors = body.errors[resourceName])) {
           for (var storeKey in errors) {
             store.dataSourceDidError(storeKey, errors[storeKey]);
+            usedStoreKeys.push(storeKey);
           }
         }
+      }
+      this._subtract(storeKeys, usedStoreKeys);
+      for(var j = 0; j < storeKeys.length; j++) {
+        store.dataSourceDidError(storeKeys[j], 'No data in response');
       }
     } else {
       for(var i = 0; i < storeKeys.length; i++) {
@@ -215,6 +234,7 @@ SC.RailsDataSource = SC.DataSource.extend(
   },
 
   destroyRecordsDidComplete: function(response, store, recordTypes, storeKeys) {
+    var usedStoreKeys = [];
     if(SC.ok(response) && response.get('status') === 200) {
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
@@ -228,22 +248,37 @@ SC.RailsDataSource = SC.DataSource.extend(
                 storeKey = recordType.storeKeyFor(id);
 
             store.dataSourceDidDestroy(storeKey);
+            usedStoreKeys.push(storeKey);
           }
         }
 
         var errors;
         if(body.errors && (errors = body.errors[resourceName])) {
-          console.log(errors);
           for (var storeKey in errors) {
             store.dataSourceDidError(storeKey, errors[storeKey]);
+            usedStoreKeys.push(storeKey);
           }
         }
+      }
+      this._subtract(storeKeys, usedStoreKeys);
+      for(var j = 0; j < storeKeys.length; j++) {
+        store.dataSourceDidError(storeKeys[j], 'No data in response');
       }
     } else {
       for(var i = 0; i < storeKeys.length; i++) {
         store.dataSourceDidError(storeKeys[i], response);
       }
     }
+  },
+
+  _subtract: function(array1, array2) {
+    var index;
+    for(var i = 0; i < array2.length; i++) {
+      if((index = $.inArray(parseInt(array2[i]), array1)) !== -1) {
+        array1.splice(index, 1);
+      }
+    }
+    return array1;
   }
 
 }) ;

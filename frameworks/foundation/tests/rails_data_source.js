@@ -234,6 +234,34 @@ test("createRecords: call dataSourceDidError on invalid records", function() {
   });
 });
 
+test("createRecords: call dataSourceDidError on records that are not present", function() {
+  expect(6);
+  stop(5000);
+
+  SC.RunLoop.begin();
+  var todo           = store.createRecord(Todo, {title: "Foo", done: true}),
+      project        = store.createRecord(Project, {name: "Sproutcore todos"});
+
+  FakeServer.registerUrl(/\/api\/bulk/, {});
+  SC.RunLoop.end();
+
+  equals(store.statusString(todo.get('storeKey')), 'BUSY_CREATING');
+  equals(store.statusString(project.get('storeKey')), 'BUSY_CREATING');
+
+  when(
+    observeUntilStatus(todo,  SC.Record.ERROR, function() {
+      equals(todo.get('id'), null);
+      equals(store.statusString(todo.get('storeKey')), 'ERROR');
+    }),
+    observeUntilStatus(project,  SC.Record.ERROR, function() {
+      equals(project.get('id'), null);
+      equals(store.statusString(project.get('storeKey')), 'ERROR');
+    })
+  ).then(function() {
+    start();
+  });
+});
+
 test("createRecords: call dataSourceDidError on all records in case of not valid response", function() {
   expect(4);
   stop(5000);
@@ -370,6 +398,49 @@ test("updateRecords: call dataSourceDidError on invalid records", function() {
   });
 });
 
+test("updateRecords: call dataSourceDidError on records not present in response", function() {
+  expect(2);
+  stop(5000);
+
+  SC.RunLoop.begin();
+  var todo = store.createRecord(Todo, {title: "Foo", done: true}),
+      project = store.createRecord(Project, {name: "Sproutcore todos"});
+
+  var body = {
+    'todos': [
+      {'id': 10, 'title': 'Foo', done: true, '_storeKey': todo.get('storeKey')}
+    ], 'projects': [
+      {'id': 5, 'name': "Sproutcore todos", '_storeKey': project.get('storeKey') }
+    ]
+  };
+  FakeServer.registerUrl(/\/api\/bulk/, body);
+
+  SC.RunLoop.end();
+
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {}),
+    observeUntilStatus(project, SC.Record.READY, function() {})
+  ).then(function() {
+    FakeServer.registerUrl(/\/api\/bulk/, {});
+
+    SC.RunLoop.begin();
+    todo.set('title', "Bar");
+    project.set('title', 'jQuery todos');
+    SC.RunLoop.end();
+
+    when(
+      observeUntilStatus(todo, SC.Record.ERROR, function() {
+        equals(store.statusString(todo.get('storeKey')), 'ERROR');
+      }),
+      observeUntilStatus(project, SC.Record.ERROR, function() {
+        equals(store.statusString(project.get('storeKey')), 'ERROR');
+      })
+    ).then(function() {
+      start();
+    });
+  });
+});
+
 test("updateRecords: call dataSourceDidError on all records in case of not valid response", function() {
   expect(2);
   stop(5000);
@@ -497,6 +568,49 @@ test("destroyRecords: call dataSourceDidError on invalid records", function() {
     };
     body['errors']['todos'][todo.get('storeKey')] = {'base': ["can't be deleted"]};
     body['errors']['projects'][project.get('storeKey')] = {'base': ["can't be deleted"]};
+    FakeServer.registerUrl(/\/api\/bulk/, body);
+
+    SC.RunLoop.begin();
+    todo.destroy();
+    project.destroy();
+    SC.RunLoop.end();
+
+    when(
+      observeUntilStatus(todo, SC.Record.ERROR, function() {
+        equals(store.statusString(todo.get('storeKey')), 'ERROR');
+      }),
+      observeUntilStatus(project, SC.Record.ERROR, function() {
+        equals(store.statusString(project.get('storeKey')), 'ERROR');
+      })
+    ).then(function() {
+      start();
+    });
+  });
+});
+
+test("destroyRecords: call dataSourceDidError on records that were not given in response", function() {
+  expect(2);
+  stop(5000);
+
+  SC.RunLoop.begin();
+  var todo = store.createRecord(Todo, {title: "Foo", done: true}),
+      project = store.createRecord(Project, {name: "Sproutcore todos"});
+
+  var body = {
+    'todos': [
+      {'id': 10, 'title': 'Foo', done: true, '_storeKey': todo.get('storeKey')}
+    ], 'projects': [
+      {'id': 5, 'name': "Sproutcore todos", '_storeKey': project.get('storeKey') }
+    ]
+  };
+  FakeServer.registerUrl(/\/api\/bulk/, body);
+  SC.RunLoop.end();
+
+  when(
+    observeUntilStatus(todo, SC.Record.READY, function() {}),
+    observeUntilStatus(project, SC.Record.READY, function() {})
+  ).then(function() {
+    var body = {};
     FakeServer.registerUrl(/\/api\/bulk/, body);
 
     SC.RunLoop.begin();
