@@ -541,8 +541,8 @@ test("fetching records", function() {
   SC.RunLoop.end();
 
   when(
-    observeOnce(todo1, 'id', function() {}),
-    observeOnce(todo2, 'id', function() {})
+    observeUntilStatus(todo1, SC.Record.READY, function() {}),
+    observeUntilStatus(todo2, SC.Record.READY, function() {})
   ).then(function() {
     var body = {
       todos: [
