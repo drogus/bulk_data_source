@@ -61,11 +61,19 @@ SC.RailsDataSource = SC.DataSource.extend(
     if(SC.ok(response) && response.get('status') === 200) {
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
-        var recordType = recordTypes[i];
-        var records = body[recordType.pluralResourceName];
+        var recordType = recordTypes[i],
+            resourceName = recordType.pluralResourceName,
+            records = body[resourceName];
+
         for(var j = 0; j < records.length; j++) {
           var storeKey = recordType.storeKeyFor(records[j]["id"]);
           store.dataSourceDidComplete(storeKey);
+        }
+        var errors;
+        if(body.errors && (errors = body.errors[resourceName])) {
+          for (var storeKey in errors) {
+            store.dataSourceDidError(storeKey, errors[storeKey]);
+          }
         }
       }
     } else {
@@ -155,7 +163,8 @@ SC.RailsDataSource = SC.DataSource.extend(
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
-            records = body[recordType.pluralResourceName];
+            resourceName = recordType.pluralResourceName;
+            records = body[resourceName];
 
         for(var j = 0; j < records.length; j++) {
           var record = records[j];
@@ -164,6 +173,12 @@ SC.RailsDataSource = SC.DataSource.extend(
             store.dataSourceDidError(record["_storeKey"], response);
           } else {
             store.dataSourceDidComplete(record["_storeKey"], null, record["id"]);
+          }
+        }
+        var errors;
+        if(body.errors && (errors = body.errors[resourceName])) {
+          for (var storeKey in errors) {
+            store.dataSourceDidError(storeKey, errors[storeKey]);
           }
         }
       }
