@@ -119,19 +119,28 @@ SC.RailsDataSource = SC.DataSource.extend(
   },
 
   retrieveRecordsDidComplete: function(response, store, recordTypes, storeKeys) {
+    var usedStoreKeys = [];
     if(SC.ok(response) && response.get('status') === 200) {
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
-            records = body[recordType.pluralResourceName];
+            resourceName = recordType.pluralResourceName,
+            records = body[resourceName];
 
-        for(var j = 0; j < records.length; j++) {
-          var record = records[j],
-              id = record['id'],
-              storeKey = recordType.storeKeyFor(id);
+        if(records) {
+          for(var j = 0; j < records.length; j++) {
+            var record = records[j],
+                id = record['id'],
+                storeKey = recordType.storeKeyFor(id);
 
-          store.dataSourceDidComplete(storeKey, record, id);
+            store.dataSourceDidComplete(storeKey, record, id);
+            usedStoreKeys.push(storeKey);
+          }
         }
+      }
+      this._subtract(storeKeys, usedStoreKeys);
+      for(var j = 0; j < storeKeys.length; j++) {
+        store.dataSourceDidError(storeKeys[j], 'No data in response');
       }
     } else {
       for(var i = 0; i < storeKeys.length; i++) {
