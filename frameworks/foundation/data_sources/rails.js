@@ -75,7 +75,8 @@ SC.RailsDataSource = SC.DataSource.extend(
         }
         var errors;
         if(body.errors && (errors = body.errors[resourceName])) {
-          for (var storeKey in errors) {
+          for (var id in errors) {
+            var storeKey = store.storeKeyFor(recordType, id);
             store.dataSourceDidError(storeKey, errors[storeKey]);
             usedStoreKeys.push(storeKey);
           }
@@ -263,7 +264,8 @@ SC.RailsDataSource = SC.DataSource.extend(
 
         var errors;
         if(body.errors && (errors = body.errors[resourceName])) {
-          for (var storeKey in errors) {
+          for (var id in errors) {
+            var storeKey = store.storeKeyFor(recordType, id);
             store.dataSourceDidError(storeKey, errors[storeKey]);
             usedStoreKeys.push(storeKey);
           }

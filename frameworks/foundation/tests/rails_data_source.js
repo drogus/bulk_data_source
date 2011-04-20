@@ -370,8 +370,8 @@ test("destroyRecords: call dataSourceDidError on invalid records", function() {
         'projects': {}
       }
     };
-    body['errors']['todos'][todo.get('storeKey')] = {'base': ["can't be deleted"]};
-    body['errors']['projects'][project.get('storeKey')] = {'base': ["can't be deleted"]};
+    body['errors']['todos'][todo.get('id')] = {'base': ["can't be deleted"]};
+    body['errors']['projects'][project.get('id')] = {'base': ["can't be deleted"]};
     FakeServer.registerUrl(/\/api\/bulk/, body);
 
     SC.RunLoop.begin();
@@ -727,7 +727,7 @@ test("updateRecords: call dataSourceDidError on invalid records", function() {
       ],
       'errors': { 'todos': {} }
     };
-    body['errors']['todos'][todo2.get('storeKey')] = {'title': ["can't be lame"]};
+    body['errors']['todos'][todo2.get('id')] = {'title': ["can't be lame"]};
     FakeServer.registerUrl(/\/api\/bulk/, body);
 
     SC.RunLoop.begin();
