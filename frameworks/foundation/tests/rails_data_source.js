@@ -12,14 +12,12 @@ var Project = SC.Record.extend({
   name: SC.Record.attr(String)
 });
 
-Project.mixin({
-  resourceName: 'project',
-  pluralResourceName: 'projects'
+Todo.mixin({
+  resourceName: 'todo'
 });
 
-Todo.mixin({
-  resourceName: 'todo',
-  pluralResourceName: 'todos'
+Project.mixin({
+  resourceName: 'project'
 });
 
 // this can be changed when sproutcore updates to jquery 1.5
@@ -116,6 +114,91 @@ module("RailsDataSource", {
     FakeServer.teardown();
     store = null;
   }
+});
+
+test("setting custom resourceName", function() {
+  expect(10);
+  stop(timeLimit);
+
+  Todo.resourceName = 'task';
+
+  var todo = store.createRecord(Todo, {title: "Foo", done: true});
+  var body = {
+    'tasks': [{'id': 10, 'title': 'Foo', done: true, '_storeKey': todo.get('storeKey')}]
+  };
+
+  FakeServer.registerUrl(/\/api\/bulk/, body);
+  SC.RunLoop.end();
+
+  observeUntilStatus(todo, SC.Record.READY, function() {
+    equals(todo.get('id'), 10);
+    equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
+
+    var body = FakeServer.server.get('lastRequest').get('body'),
+        expected = {
+          'tasks': [{'title': 'Foo', done: true, '_storeKey': todo.get('storeKey')}]
+        };
+    equals(SC.json.encode(body), SC.json.encode(expected));
+
+    body = {
+      'tasks': [{'id': 10, 'title': 'Bar', done: true, '_storeKey': todo.get('storeKey')}]
+    };
+    FakeServer.registerUrl(/\/api\/bulk/, body);
+
+    SC.RunLoop.begin();
+    todo.set('title', 'Bar');
+    SC.RunLoop.end();
+
+    observeUntilStatus(todo, SC.Record.READY, function() {
+      equals(todo.get('title'), 'Bar');
+      equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
+
+      var body = FakeServer.server.get('lastRequest').get('body'),
+          expected = {
+            'tasks': [{'title': 'Bar', done: true, '_storeKey': todo.get('storeKey'), 'id': 10}]
+          };
+      equals(SC.json.encode(body), SC.json.encode(expected));
+
+      body = {
+        'tasks': [{'id': 10, 'title': 'Baz', '_storeKey': todo.get('storeKey')}]
+      };
+      FakeServer.registerUrl(/\/api\/bulk/, body);
+
+      SC.RunLoop.begin();
+      todo.refresh();
+      SC.RunLoop.end();
+
+      observeUntilStatus(todo, SC.Record.READY, function() {
+
+        equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
+
+        var address = FakeServer.server.get('lastRequest').get('address');
+        equals(address, '/api/bulk?tasks[]=10');
+
+        var body = {
+          'tasks': [10]
+        };
+        FakeServer.registerUrl(/\/api\/bulk/, body);
+
+        SC.RunLoop.begin();
+        todo.destroy();
+        SC.RunLoop.end();
+
+        observeUntilStatus(todo, SC.Record.DESTROYED, function() {
+          equals(store.statusString(todo.get('storeKey')), 'DESTROYED_CLEAN');
+
+          var body = FakeServer.server.get('lastRequest').get('body'),
+              expected = {
+                'tasks': [10]
+              };
+          equals(SC.json.encode(body), SC.json.encode(expected));
+
+          start();
+        });
+      });
+    });
+  });
+
 });
 
 test("setting custom bulk api url", function() {

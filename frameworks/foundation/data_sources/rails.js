@@ -10,11 +10,15 @@ SC.RailsDataSource = SC.DataSource.extend(
   bulkApiUrl: function(store) {
     return store.bulkApiUrl || "/api/bulk";
   },
+  pluralResourceName: function(recordType) {
+    return recordType.pluralResourceName || recordType.resourceName.pluralize();
+  },
   // ..........................................................
   // QUERY SUPPORT
   //
   fetch: function(store, query) {
-    SC.Request.getUrl('%@?%@=all'.fmt(this.bulkApiUrl(store), query.recordType.pluralResourceName))
+    var pluralResourceName = this.pluralResourceName(query.get('recordType'));
+    SC.Request.getUrl('%@?%@=all'.fmt(this.bulkApiUrl(store), pluralResourceName))
       .json()
       .notify(this, 'fetchDidComplete', store, query)
       .send();
@@ -25,7 +29,7 @@ SC.RailsDataSource = SC.DataSource.extend(
   fetchDidComplete: function(response, store, query) {
     if(SC.ok(response)) {
       var recordType = query.get('recordType'),
-          records = response.get('body')[recordType.pluralResourceName];
+          records = response.get('body')[this.pluralResourceName(recordType)];
 
       store.loadRecords(recordType, records);
       store.dataSourceDidFetchQuery(query);
@@ -41,7 +45,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       var recordType = store.recordTypeFor(storeKeys[i]),
           data = store.readDataHash(storeKeys[i]),
           id = store.idFor(storeKeys[i]),
-          resourceName = recordType.pluralResourceName;
+          resourceName = this.pluralResourceName(recordType);
 
       if(records[resourceName] === undefined) {
         records[resourceName] = [];
@@ -66,7 +70,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
-            resourceName = recordType.pluralResourceName,
+            resourceName = this.pluralResourceName(recordType),
             records = body[resourceName];
 
         if(records) {
@@ -107,7 +111,7 @@ SC.RailsDataSource = SC.DataSource.extend(
     for(var i = 0; i < storeKeys.length; i++) {
       var recordType = store.recordTypeFor(storeKeys[i]),
           id = store.idFor(storeKeys[i]),
-          resourceName = recordType.pluralResourceName;
+          resourceName = this.pluralResourceName(recordType);
 
       queryString.push("%@[]=%@".fmt(resourceName, id));
       if($.inArray(recordType, recordTypes) === -1) {
@@ -128,7 +132,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
-            resourceName = recordType.pluralResourceName,
+            resourceName = this.pluralResourceName(recordType),
             records = body[resourceName];
 
         if(records) {
@@ -160,7 +164,7 @@ SC.RailsDataSource = SC.DataSource.extend(
     for(var i = 0; i < storeKeys.length; i++) {
       var recordType = store.recordTypeFor(storeKeys[i]),
           data = store.readDataHash(storeKeys[i]),
-          resourceName = recordType.pluralResourceName;
+          resourceName = this.pluralResourceName(recordType);
 
       // need to pass storeKey to not loose track of the object since
       // we do not have an id yet
@@ -187,7 +191,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
-            resourceName = recordType.pluralResourceName;
+            resourceName = this.pluralResourceName(recordType);
             records = body[resourceName];
 
         if(records) {
@@ -228,7 +232,7 @@ SC.RailsDataSource = SC.DataSource.extend(
     for(var i = 0; i < storeKeys.length; i++) {
       var recordType = store.recordTypeFor(storeKeys[i]),
           id = store.idFor(storeKeys[i]),
-          resourceName = recordType.pluralResourceName;
+          resourceName = this.pluralResourceName(recordType);
 
       if(records[resourceName] === undefined) {
         records[resourceName] = [];
@@ -252,7 +256,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
-            resourceName = recordType.pluralResourceName;
+            resourceName = this.pluralResourceName(recordType);
             records = body[resourceName];
 
         if(records) {
