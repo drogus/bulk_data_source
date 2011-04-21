@@ -12,14 +12,6 @@ var Project = SC.Record.extend({
   name: SC.Record.attr(String)
 });
 
-Todo.mixin({
-  resourceName: 'todo'
-});
-
-Project.mixin({
-  resourceName: 'project'
-});
-
 // this can be changed when sproutcore updates to jquery 1.5
 function when() {
   var triggers = [];
@@ -108,6 +100,8 @@ module("RailsDataSource", {
     FakeServer.setup();
     store = SC.Store.create().from('SC.RailsDataSource');
     store.commitRecordsAutomatically = true;
+    Todo.resourceName = 'todo';
+    Project.resourceName = 'project';
   },
 
   teardown: function() {
