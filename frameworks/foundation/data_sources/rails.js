@@ -7,11 +7,14 @@
 
 SC.RailsDataSource = SC.DataSource.extend(
 /** @scope SC.RailsDataStore.prototype */ {
+  bulkApiUrl: function(store) {
+    return store.bulkApiUrl || "/api/bulk";
+  },
   // ..........................................................
   // QUERY SUPPORT
   //
   fetch: function(store, query) {
-    SC.Request.getUrl('%@?%@=all'.fmt(store.bulkApiUrl, query.recordType.pluralResourceName))
+    SC.Request.getUrl('%@?%@=all'.fmt(this.bulkApiUrl(store), query.recordType.pluralResourceName))
       .json()
       .notify(this, 'fetchDidComplete', store, query)
       .send();
@@ -50,7 +53,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       }
     }
 
-    SC.Request.putUrl(store.bulkApiUrl)
+    SC.Request.putUrl(this.bulkApiUrl(store))
               .notify(this, 'updateRecordsDidComplete', store, recordTypes, storeKeys)
               .json().send(records);
 
@@ -112,7 +115,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       }
     }
 
-    SC.Request.getUrl("%@?%@".fmt(store.bulkApiUrl, queryString.join('&')))
+    SC.Request.getUrl("%@?%@".fmt(this.bulkApiUrl(store), queryString.join('&')))
               .notify(this, 'retrieveRecordsDidComplete', store, recordTypes, storeKeys)
               .json().send();
 
@@ -171,7 +174,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       }
     }
 
-    SC.Request.postUrl(store.bulkApiUrl)
+    SC.Request.postUrl(this.bulkApiUrl(store))
               .notify(this, 'createRecordsDidComplete', store, recordTypes, storeKeys)
               .json().send(records);
 
@@ -236,7 +239,7 @@ SC.RailsDataSource = SC.DataSource.extend(
       }
     }
 
-    SC.Request.deleteUrl(store.bulkApiUrl)
+    SC.Request.deleteUrl(this.bulkApiUrl(store))
               .notify(this, 'destroyRecordsDidComplete', store, recordTypes, storeKeys)
               .json().send(records);
 

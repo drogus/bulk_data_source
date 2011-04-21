@@ -1,4 +1,5 @@
-var store, fooId, barId;
+var store, fooId, barId,
+    timeLimit = 2000;
 
 var Todo = SC.Record.extend({
   primaryKey: 'id',
@@ -108,7 +109,6 @@ module("RailsDataSource", {
   setup: function() {
     FakeServer.setup();
     store = SC.Store.create().from('SC.RailsDataSource');
-    store.bulkApiUrl = "/api/bulk";
     store.commitRecordsAutomatically = true;
   },
 
@@ -118,9 +118,69 @@ module("RailsDataSource", {
   }
 });
 
+test("setting custom bulk api url", function() {
+  expect(6);
+  stop(timeLimit);
+
+  store.bulkApiUrl = "/buahahahaha";
+  var todo = store.createRecord(Todo, {title: "Foo", done: true});
+  var body = {
+    'todos': [{'id': 10, 'title': 'Foo', done: true, '_storeKey': todo.get('storeKey')}]
+  };
+
+  FakeServer.registerUrl(/\/buahahahaha/, body);
+  SC.RunLoop.end();
+
+  observeUntilStatus(todo, SC.Record.READY, function() {
+    equals(todo.get('id'), 10);
+    equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
+
+    var body = {
+      'todos': [{'id': 10, 'title': 'Bar', done: true, '_storeKey': todo.get('storeKey')}]
+    };
+    FakeServer.registerUrl(/\/buahahahaha/, body);
+
+    SC.RunLoop.begin();
+    todo.set('title', 'Bar');
+    SC.RunLoop.end();
+
+    observeUntilStatus(todo, SC.Record.READY, function() {
+      equals(todo.get('title'), 'Bar');
+      equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
+
+      var body = {
+        'todos': [{'id': 10, 'title': 'Baz', '_storeKey': todo.get('storeKey')}]
+      };
+      FakeServer.registerUrl(/\/buahahahaha/, body);
+
+      SC.RunLoop.begin();
+      todo.refresh();
+      SC.RunLoop.end();
+
+      observeUntilStatus(todo, SC.Record.READY, function() {
+        equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
+
+        var body = {
+          'todos': [10]
+        };
+        FakeServer.registerUrl(/\/buahahahaha/, body);
+
+        SC.RunLoop.begin();
+        todo.destroy();
+        SC.RunLoop.end();
+
+        observeUntilStatus(todo, SC.Record.DESTROYED, function() {
+          equals(store.statusString(todo.get('storeKey')), 'DESTROYED_CLEAN');
+          start();
+        });
+      });
+    });
+  });
+});
+
 test("createRecords: pass _storeKey on create (for records identification)", function() {
   expect(5);
-  stop(10000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true});
@@ -138,10 +198,10 @@ test("createRecords: pass _storeKey on create (for records identification)", fun
   SC.RunLoop.end();
 
   when(
-    observeOnce(todo, 'id', function() {
+    observeUntilStatus(todo, SC.Record.READY, function() {
       equals(todo.get('id'), 10);
     }),
-    observeOnce(project, 'id', function() {
+    observeUntilStatus(project, SC.Record.READY, function() {
       equals(project.get('id'), 5);
     })
   ).then(function() {
@@ -164,7 +224,7 @@ test("createRecords: pass _storeKey on create (for records identification)", fun
 
 test("createRecords: call dataSourceDidError on invalid records", function() {
   expect(14);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo           = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -236,7 +296,7 @@ test("createRecords: call dataSourceDidError on invalid records", function() {
 
 test("createRecords: call dataSourceDidError on records that are not present", function() {
   expect(6);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo           = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -264,7 +324,7 @@ test("createRecords: call dataSourceDidError on records that are not present", f
 
 test("createRecords: call dataSourceDidError on all records in case of not valid response", function() {
   expect(4);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -290,7 +350,7 @@ test("createRecords: call dataSourceDidError on all records in case of not valid
 
 test("destroying records", function() {
   expect(5);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true});
@@ -344,7 +404,7 @@ test("destroying records", function() {
 
 test("destroyRecords: call dataSourceDidError on invalid records", function() {
   expect(2);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -394,7 +454,7 @@ test("destroyRecords: call dataSourceDidError on invalid records", function() {
 
 test("destroyRecords: call dataSourceDidError on records that were not given in response", function() {
   expect(2);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -438,7 +498,7 @@ test("destroyRecords: call dataSourceDidError on records that were not given in 
 
 test("destroyRecords: call dataSourceDidError on all records in case of not valid response", function() {
   expect(2);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -480,7 +540,7 @@ test("destroyRecords: call dataSourceDidError on all records in case of not vali
 
 test("fetching records", function() {
   expect(3);
-  stop(5000);
+  stop(timeLimit);
 
   createRecords([
     [Todo, {title: "Foo", id: 10}],
@@ -509,7 +569,7 @@ test("fetching records", function() {
 
 test("retrieving records", function() {
   expect(4);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true});
@@ -558,7 +618,7 @@ test("retrieving records", function() {
 
 test("retrieveRecords: call dataSourceDidError on records not present in response", function() {
   expect(2);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -601,7 +661,7 @@ test("retrieveRecords: call dataSourceDidError on records not present in respons
 
 test("retrieveRecords: call dataSourceDidError on all records in case of not valid response", function() {
   expect(2);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -644,7 +704,7 @@ test("retrieveRecords: call dataSourceDidError on all records in case of not val
 
 test("updating records", function() {
   expect(5);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true});
@@ -695,7 +755,7 @@ test("updating records", function() {
 
 test("updateRecords: call dataSourceDidError on invalid records", function() {
   expect(3);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -754,7 +814,7 @@ test("updateRecords: call dataSourceDidError on invalid records", function() {
 
 test("updateRecords: call dataSourceDidError on records not present in response", function() {
   expect(2);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
@@ -797,7 +857,7 @@ test("updateRecords: call dataSourceDidError on records not present in response"
 
 test("updateRecords: call dataSourceDidError on all records in case of not valid response", function() {
   expect(2);
-  stop(5000);
+  stop(timeLimit);
 
   SC.RunLoop.begin();
   var todo = store.createRecord(Todo, {title: "Foo", done: true}),
