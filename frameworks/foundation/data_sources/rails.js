@@ -168,7 +168,7 @@ SC.RailsDataSource = SC.DataSource.extend(
 
       // need to pass storeKey to not loose track of the object since
       // we do not have an id yet
-      data["_storeKey"] = storeKeys[i];
+      data["_local_id"] = storeKeys[i];
       if(records[resourceName] === undefined) {
         records[resourceName] = [];
       }
@@ -199,11 +199,11 @@ SC.RailsDataSource = SC.DataSource.extend(
             var record = records[j];
 
             if(record['id'] === null || record['id'] === undefined) {
-              store.dataSourceDidError(record["_storeKey"], response);
+              store.dataSourceDidError(record["_local_id"], response);
             } else {
-              store.dataSourceDidComplete(record["_storeKey"], null, record["id"]);
+              store.dataSourceDidComplete(record["_local_id"], null, record["id"]);
             }
-            usedStoreKeys.push(record['_storeKey']);
+            usedStoreKeys.push(record['_local_id']);
           }
         }
         var errors;
