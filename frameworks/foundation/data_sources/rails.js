@@ -29,7 +29,15 @@ SC.RailsDataSource = SC.DataSource.extend(
   fetchDidComplete: function(response, store, query) {
     if(SC.ok(response)) {
       var recordType = query.get('recordType'),
-          records = response.get('body')[this.pluralResourceName(recordType)];
+          records = response.get('body')[this.pluralResourceName(recordType)],
+          primaryKey = recordType.prototype.primaryKey;
+
+      if(primaryKey !== 'id') {
+        records.forEach(function(record) {
+          record[primaryKey] = record['id'];
+          delete(record['id']);
+        });
+      }
 
       store.loadRecords(recordType, records);
       store.dataSourceDidFetchQuery(query);
@@ -71,12 +79,16 @@ SC.RailsDataSource = SC.DataSource.extend(
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
             resourceName = this.pluralResourceName(recordType),
-            records = body[resourceName];
+            records = body[resourceName],
+            primaryKey = recordType.prototype.primaryKey;
 
         if(records) {
           for(var j = 0; j < records.length; j++) {
-            var storeKey = recordType.storeKeyFor(records[j]["id"]);
-            store.dataSourceDidComplete(storeKey);
+            var storeKey = recordType.storeKeyFor(records[j]["id"]),
+                id = records[j]['id'];
+
+            delete(records[j]['id']);
+            store.dataSourceDidComplete(storeKey, records[j], id);
             usedStoreKeys.push(storeKey);
           }
         }
@@ -141,6 +153,7 @@ SC.RailsDataSource = SC.DataSource.extend(
                 id = record['id'],
                 storeKey = recordType.storeKeyFor(id);
 
+            delete(record['id']);
             store.dataSourceDidComplete(storeKey, record, id);
             usedStoreKeys.push(storeKey);
           }
@@ -191,8 +204,9 @@ SC.RailsDataSource = SC.DataSource.extend(
       var body = response.get('body');
       for(var i = 0; i < recordTypes.length; i++) {
         var recordType = recordTypes[i],
-            resourceName = this.pluralResourceName(recordType);
-            records = body[resourceName];
+            resourceName = this.pluralResourceName(recordType),
+            records = body[resourceName],
+            primaryKey = recordType.prototype.primaryKey;
 
         if(records) {
           for(var j = 0; j < records.length; j++) {
@@ -201,7 +215,9 @@ SC.RailsDataSource = SC.DataSource.extend(
             if(record['id'] === null || record['id'] === undefined) {
               store.dataSourceDidError(record["_local_id"], response);
             } else {
-              store.dataSourceDidComplete(record["_local_id"], null, record["id"]);
+              var id = record['id'];
+              delete(record['id']);
+              store.dataSourceDidComplete(record["_local_id"], record, id);
             }
             usedStoreKeys.push(record['_local_id']);
           }

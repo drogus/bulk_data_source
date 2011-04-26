@@ -2,7 +2,7 @@ var store, fooId, barId,
     timeLimit = 2000;
 
 var Todo = SC.Record.extend({
-  primaryKey: 'id',
+  primaryKey: 'guid',
   title: SC.Record.attr(String),
   isDone: SC.Record.attr(Boolean, { defaultValue: NO, key: "done" })
 });
@@ -73,7 +73,7 @@ function createRecords(records, callback) {
   for(var i = 0; i < records.length; i++) {
     var recordType = records[i][0],
         data = records[i][1],
-        resourceName = records[i].pluralResourceName;
+        resourceName = recordType.resourceName.pluralize();
 
     var record = store.createRecord(recordType, data);
     newRecords.push(record);
@@ -634,9 +634,9 @@ test("fetching records", function() {
     var records = store.find(Todo);
     observeOnce(records, 'status', function() {
       var titles = records.map(function(r) { return r.get('title'); }).sort();
+      equals(titles.length, 2);
       equals(titles[0], "Bar");
       equals(titles[1], "Foo");
-      equals(titles.length, 2);
 
       start();
     });
@@ -803,7 +803,7 @@ test("updating records", function() {
     observeUntilStatus(project, SC.Record.READY, function() {})
   ).then(function() {
     var body = {
-      'todos': [ {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')} ]
+      'todos': [ {'id': 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')} ]
     };
     FakeServer.registerUrl(/\/api\/bulk/, body);
 
