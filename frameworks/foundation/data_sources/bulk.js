@@ -5,8 +5,8 @@
   @extends SC.DataSource
 */
 
-SC.RailsDataSource = SC.DataSource.extend(
-/** @scope SC.RailsDataStore.prototype */ {
+SC.BulkDataSource = SC.DataSource.extend(
+/** @scope SC.BulkDataStore.prototype */ {
   bulkApiUrl: function(store) {
     return store.bulkApiUrl || "/api/bulk";
   },

@@ -95,10 +95,10 @@ function createRecords(records, callback) {
   when.apply(this, observers).then(callback);
 }
 
-module("RailsDataSource", {
+module("BulkDataSource", {
   setup: function() {
     FakeServer.setup();
-    store = SC.Store.create().from('SC.RailsDataSource');
+    store = SC.Store.create().from('SC.BulkDataSource');
     store.commitRecordsAutomatically = true;
     Todo.resourceName = 'todo';
     Project.resourceName = 'project';
