@@ -615,6 +615,7 @@ test("destroyRecords: call dataSourceDidError on all records in case of not vali
   });
 });
 
+
 test("fetching records", function() {
   expect(3);
   stop(timeLimit);
@@ -643,6 +644,20 @@ test("fetching records", function() {
   });
 });
 
+test("do not freak out when response is empty when fetching records", function() {
+  expect(1);
+  stop(timeLimit);
+
+  var body = {};
+  FakeServer.registerUrl(/\/api\/bulk/, body);
+
+  var records = store.find(Todo);
+  observeOnce(records, 'status', function() {
+    equals(records.length(), 0);
+
+    start();
+  });
+});
 
 test("retrieving records", function() {
   expect(4);

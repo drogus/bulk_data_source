@@ -29,7 +29,7 @@ SC.BulkDataSource = SC.DataSource.extend(
   fetchDidComplete: function(response, store, query) {
     if(SC.ok(response)) {
       var recordType = query.get('recordType'),
-          records = response.get('body')[this.pluralResourceName(recordType)],
+          records = response.get('body')[this.pluralResourceName(recordType)] || [],
           primaryKey = recordType.prototype.primaryKey;
 
       if(primaryKey !== 'id') {
