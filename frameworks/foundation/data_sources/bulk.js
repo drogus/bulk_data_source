@@ -53,7 +53,12 @@ SC.BulkDataSource = SC.DataSource.extend(
       var recordType = store.recordTypeFor(storeKeys[i]),
           data = store.readDataHash(storeKeys[i]),
           id = store.idFor(storeKeys[i]),
-          resourceName = this.pluralResourceName(recordType);
+          resourceName = this.pluralResourceName(recordType),
+          primaryKey = recordType.prototype.primaryKey;
+
+      if(primaryKey !== 'id') {
+        delete(data[primaryKey]);
+      }
 
       if(records[resourceName] === undefined) {
         records[resourceName] = [];
