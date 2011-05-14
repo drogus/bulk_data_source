@@ -1,7 +1,7 @@
 config :all,
-  :required => ['sproutcore/datastore'],
-  :test_required  => ['sproutcore/foundation', 'sproutcore/datastore'],
-  :debug_required => ['sproutcore/foundation', 'sproutcore/datastore']
+       :required => ['sproutcore/datastore', 'sproutcore/ajax'],
+       :test_required  => ['sproutcore/foundation', 'sproutcore/datastore', 'sproutcore/ajax'],
+       :debug_required => ['sproutcore/foundation', 'sproutcore/datastore', 'sproutcore/ajax']
 
 # CORE FRAMEWORKS
 config :foundation, :required => []

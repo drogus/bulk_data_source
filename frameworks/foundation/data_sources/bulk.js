@@ -4,6 +4,7 @@
 
   @extends SC.DataSource
 */
+sc_require('system/string');
 
 SC.BulkDataSource = SC.DataSource.extend(
 /** @scope SC.BulkDataStore.prototype */ {
@@ -11,7 +12,7 @@ SC.BulkDataSource = SC.DataSource.extend(
     return store.bulkApiUrl || "/api/bulk";
   },
   pluralResourceName: function(recordType) {
-    return recordType.pluralResourceName || recordType.resourceName.pluralize();
+    return recordType.pluralResourceName || SC.String.pluralize(recordType.resourceName);
   },
   // ..........................................................
   // QUERY SUPPORT
