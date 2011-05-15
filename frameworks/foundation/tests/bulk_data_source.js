@@ -1,15 +1,21 @@
 var store, fooId, barId,
     timeLimit = 2000;
 
-var Todo = SC.Record.extend({
+Todo = SC.Record.extend({
   primaryKey: 'guid',
   title: SC.Record.attr(String),
-  isDone: SC.Record.attr(Boolean, { defaultValue: NO, key: "done" })
+  isDone: SC.Record.attr(Boolean, { defaultValue: NO, key: "done" }),
+  project: SC.Record.toOne("Project", {
+    inverse: "todos", isMaster: NO
+  })
 });
 
-var Project = SC.Record.extend({
+Project = SC.Record.extend({
   primaryKey: 'id',
-  name: SC.Record.attr(String)
+  name: SC.Record.attr(String),
+  todos: SC.Record.toMany("Todo", {
+    inverse: "project", isMaster: YES
+  })
 });
 
 // this can be changed when sproutcore updates to jquery 1.5
@@ -100,6 +106,7 @@ module("BulkDataSource", {
     FakeServer.setup();
     store = SC.Store.create().from('SC.BulkDataSource');
     store.commitRecordsAutomatically = true;
+    store._getDataSource();
     Todo.resourceName = 'todo';
     Project.resourceName = 'project';
   },
@@ -988,4 +995,26 @@ test("updateRecords: call dataSourceDidError on all records in case of not valid
       start();
     });
   });
+});
+
+test("handling toOne association", function() {
+  var project = store.createRecord(Project, {name: "SproutCore", id: '10'}),
+      todo = store.createRecord(Todo, {title: "Foo", done: true, project: project});
+
+  var data = store.readDataHash(todo.get("storeKey"));
+  store.get("dataSource").handleAssociations(store, Todo, data);
+
+  equals(data["project"], undefined);
+  equals(data["project_id"], 10);
+});
+
+test("handling toMany association", function() {
+  var todo = store.createRecord(Todo, {title: "Foo", done: true, id: '10'}),
+      project = store.createRecord(Project, {name: "SproutCore", todos: [10]});
+
+  var data = store.readDataHash(project.get("storeKey"));
+  store.get("dataSource").handleAssociations(store, Project, data);
+
+  equals(data["todo"], undefined);
+  equals(data["todo_ids"][0], '10');
 });

@@ -57,6 +57,8 @@ SC.BulkDataSource = SC.DataSource.extend(
           resourceName = this.pluralResourceName(recordType),
           primaryKey = recordType.prototype.primaryKey;
 
+     this.handleAssociations(store, recordType, data);
+
       if(primaryKey !== 'id') {
         delete(data[primaryKey]);
       }
@@ -176,6 +178,27 @@ SC.BulkDataSource = SC.DataSource.extend(
     }
   },
 
+  handleAssociations: function(store, recordType, data) {
+    for(var prop in data) {
+      if(data.hasOwnProperty(prop)) {
+        var attrType = recordType.prototype[prop];
+        if(attrType && attrType.kindOf) {
+          if(attrType.kindOf(SC.SingleAttribute)) {
+            var value = data[prop];
+            delete(data[prop]);
+            data[prop + '_id'] = store.idFor(value.get("storeKey"));
+          } else if(attrType.kindOf(SC.ManyAttribute)) {
+            var ids = data[prop],
+                manyRecordType = attrType.get('typeClass');
+            delete(data[prop]);
+            data[manyRecordType.resourceName + "_ids"] = ids;
+          }
+        }
+      }
+    }
+    return data;
+  },
+
   createRecords: function(store, storeKeys) {
     var records = {},
         recordTypes = [];
@@ -184,6 +207,8 @@ SC.BulkDataSource = SC.DataSource.extend(
       var recordType = store.recordTypeFor(storeKeys[i]),
           data = store.readDataHash(storeKeys[i]),
           resourceName = this.pluralResourceName(recordType);
+
+      this.handleAssociations(store, recordType, data);
 
       // need to pass storeKey to not loose track of the object since
       // we do not have an id yet
