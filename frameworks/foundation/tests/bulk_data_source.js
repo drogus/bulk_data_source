@@ -997,24 +997,58 @@ test("updateRecords: call dataSourceDidError on all records in case of not valid
   });
 });
 
-test("handling toOne association", function() {
+test("sending toOne association", function() {
   var project = store.createRecord(Project, {name: "SproutCore", id: '10'}),
       todo = store.createRecord(Todo, {title: "Foo", done: true, project: project});
 
   var data = store.readDataHash(todo.get("storeKey"));
-  store.get("dataSource").handleAssociations(store, Todo, data);
+  store.get("dataSource").normalizeAssociationsForServer(store, Todo, data);
 
   equals(data["project"], undefined);
   equals(data["project_id"], 10);
 });
 
-test("handling toMany association", function() {
+test("sending toMany association", function() {
   var todo = store.createRecord(Todo, {title: "Foo", done: true, id: '10'}),
       project = store.createRecord(Project, {name: "SproutCore", todos: [10]});
 
   var data = store.readDataHash(project.get("storeKey"));
-  store.get("dataSource").handleAssociations(store, Project, data);
+  store.get("dataSource").normalizeAssociationsForServer(store, Project, data);
 
-  equals(data["todo"], undefined);
+  equals(data["todos"], undefined);
   equals(data["todo_ids"][0], '10');
+});
+
+test("receiving toOne association", function() {
+  var data = {
+    title: "Something",
+    done: true,
+    project_id: 10
+  };
+  store.get("dataSource").normalizeAssociationsFromServer(store, Todo, data);
+
+  equals(data["project_id"], undefined);
+  equals(data["project"], 10);
+});
+
+test("receiving toMany association", function() {
+  var data = {
+    name: "Something",
+    todo_ids: [10]
+  };
+  store.get("dataSource").normalizeAssociationsFromServer(store, Project, data);
+
+  equals(data["todos"][0], 10);
+  equals(data["todo_ids"], undefined);
+});
+
+test("receiving toMany association with records", function() {
+  var data = {
+    name: "Something",
+    todos: [{"id": "10"}]
+  };
+
+  store.get("dataSource").normalizeAssociationsFromServer(store, Project, data);
+
+  equals(data["todos"][0], 10);
 });

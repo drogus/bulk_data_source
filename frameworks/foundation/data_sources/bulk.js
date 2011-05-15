@@ -28,17 +28,19 @@ SC.BulkDataSource = SC.DataSource.extend(
   },
 
   fetchDidComplete: function(response, store, query) {
+    var self = this;
     if(SC.ok(response)) {
       var recordType = query.get('recordType'),
           records = response.get('body')[this.pluralResourceName(recordType)] || [],
           primaryKey = recordType.prototype.primaryKey;
 
-      if(primaryKey !== 'id') {
-        records.forEach(function(record) {
+      records.forEach(function(record) {
+        if(primaryKey !== 'id') {
           record[primaryKey] = record['id'];
           delete(record['id']);
-        });
-      }
+        }
+        self.normalizeAssociationsFromServer(store, recordType, record);
+      });
 
       store.loadRecords(recordType, records);
       store.dataSourceDidFetchQuery(query);
@@ -57,7 +59,7 @@ SC.BulkDataSource = SC.DataSource.extend(
           resourceName = this.pluralResourceName(recordType),
           primaryKey = recordType.prototype.primaryKey;
 
-     this.handleAssociations(store, recordType, data);
+     this.normalizeAssociationsForServer(store, recordType, data);
 
       if(primaryKey !== 'id') {
         delete(data[primaryKey]);
@@ -96,6 +98,7 @@ SC.BulkDataSource = SC.DataSource.extend(
                 id = records[j]['id'];
 
             delete(records[j]['id']);
+            this.normalizeAssociationsFromServer(store, recordType, records[j]);
             store.dataSourceDidComplete(storeKey, records[j], id);
             usedStoreKeys.push(storeKey);
           }
@@ -162,6 +165,7 @@ SC.BulkDataSource = SC.DataSource.extend(
                 storeKey = recordType.storeKeyFor(id);
 
             delete(record['id']);
+            this.normalizeAssociationsFromServer(store, recordType, record);
             store.dataSourceDidComplete(storeKey, record, id);
             usedStoreKeys.push(storeKey);
           }
@@ -178,7 +182,39 @@ SC.BulkDataSource = SC.DataSource.extend(
     }
   },
 
-  handleAssociations: function(store, recordType, data) {
+  normalizeAssociationsFromServer: function(store, recordType, data) {
+    for(var prop in data) {
+      var match;
+      if(prop !== "_local_id" && (match = prop.match(/(.*)_(ids?)$/))) {
+        var association = match[1],
+            type = match[2],
+            value = data[prop];
+
+        if(type == "ids") {
+          association = SC.String.pluralize(association);
+        }
+
+        delete(data[prop]);
+        data[association] = value;
+      } else {
+        attrType = recordType.prototype[prop];
+        if(attrType && attrType.kindOf) {
+          if(attrType.kindOf(SC.ManyAttribute)) {
+            var records = data[prop],
+                ids = [];
+
+            for(var i = 0; i < records.length; i++) {
+              ids.push(records[i]["id"]);
+            }
+            data[prop] = ids;
+          }
+        }
+      }
+    }
+    return data;
+  },
+
+  normalizeAssociationsForServer: function(store, recordType, data) {
     for(var prop in data) {
       if(data.hasOwnProperty(prop)) {
         var attrType = recordType.prototype[prop];
@@ -208,7 +244,7 @@ SC.BulkDataSource = SC.DataSource.extend(
           data = store.readDataHash(storeKeys[i]),
           resourceName = this.pluralResourceName(recordType);
 
-      this.handleAssociations(store, recordType, data);
+      this.normalizeAssociationsForServer(store, recordType, data);
 
       // need to pass storeKey to not loose track of the object since
       // we do not have an id yet
@@ -248,6 +284,7 @@ SC.BulkDataSource = SC.DataSource.extend(
             } else {
               var id = record['id'];
               delete(record['id']);
+              this.normalizeAssociationsFromServer(store, recordType, record);
               store.dataSourceDidComplete(record["_local_id"], record, id);
             }
             usedStoreKeys.push(record['_local_id']);
