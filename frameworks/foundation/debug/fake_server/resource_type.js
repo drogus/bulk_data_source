@@ -1,4 +1,4 @@
-sc_require('debug/fake-server/resource');
+sc_require('debug/fake_server/resource');
 
 FakeServer.ResourceType = SC.Object.extend({
   resources: [],

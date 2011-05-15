@@ -1,6 +1,6 @@
 FakeServer = {
   setup: function() {
-    this.server = FakeServer.Server.create(); 
+    this.server = FakeServer.Server.create();
     if(this.originalSendFunction === undefined)
       this.startInterceptingRequests();
   },

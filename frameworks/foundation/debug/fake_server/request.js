@@ -1,4 +1,4 @@
-sc_require('debug/fake-server/base');
+sc_require('debug/fake_server/base');
 
 FakeServer.FakeRequest = SC.Object.create({
   registeredUrls: [],
