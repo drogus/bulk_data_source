@@ -225,7 +225,9 @@ SC.BulkDataSource = SC.DataSource.extend(
           if(attrType.kindOf(SC.SingleAttribute)) {
             var value = data[prop];
             delete(data[prop]);
-            data[prop + '_id'] = store.idFor(value.get("storeKey"));
+            if(value) {
+              data[prop + '_id'] = value.get ? store.idFor(value.get("storeKey")) : value;
+            }
           } else if(attrType.kindOf(SC.ManyAttribute)) {
             var ids = data[prop],
                 manyRecordType = attrType.get('typeClass');

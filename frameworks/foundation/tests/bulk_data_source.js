@@ -1019,6 +1019,15 @@ test("sending toMany association", function() {
   equals(data["todo_ids"][0], '10');
 });
 
+test("don't try to save id for a record if it's null", function() {
+  var todo = store.createRecord(Todo, {title: "Foo", done: true, id: '10', project: null});
+
+  var data = store.readDataHash(todo.get("storeKey"));
+  store.get("dataSource").normalizeAssociationsForServer(store, Todo, data);
+
+  equals(data["title"], 'Foo');
+});
+
 test("receiving toOne association", function() {
   var data = {
     title: "Something",
