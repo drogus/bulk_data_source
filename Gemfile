@@ -1,1 +1,1 @@
-gem "sproutcore", :path => "/Users/drogus/projekty/sproutcore/abbot"
+gem "sproutcore", "~> 1.6.0.beta.3"
