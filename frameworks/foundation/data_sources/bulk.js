@@ -194,8 +194,11 @@ SC.BulkDataSource = SC.DataSource.extend(
           association = SC.String.pluralize(association);
         }
 
-        delete(data[prop]);
-        data[association] = value;
+        var assocType = recordType.prototype[association];
+        if(assocType && (assocType.kindOf(SC.ManyAttribute) || assocType.kindOf(SC.SingleAttribute))) {
+          delete(data[prop]);
+          data[association] = value;
+        }
       } else {
         attrType = recordType.prototype[prop];
         if(attrType && attrType.kindOf) {

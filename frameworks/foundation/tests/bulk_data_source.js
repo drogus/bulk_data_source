@@ -1052,3 +1052,18 @@ test("receiving toMany association with records", function() {
 
   equals(data["todos"][0], 10);
 });
+
+test("do not try to change ids that are not associations", function() {
+  var data = {
+    name: "Something",
+    _local_id: 10,
+    something_id: 20,
+    something_ids: [20]
+  };
+
+  store.get("dataSource").normalizeAssociationsFromServer(store, Project, data);
+
+  equals(data._local_id, 10);
+  equals(data.something_id, 20);
+  equals(data.something_ids[0], 20);
+});
