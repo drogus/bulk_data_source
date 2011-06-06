@@ -628,13 +628,13 @@ test("fetching records", function() {
   stop(timeLimit);
 
   createRecords([
-    [Todo, {title: "Foo", id: 10}],
-    [Todo, {title: "Bar", id: 11}]
+    [Todo, {title: "Foo", guid: 10}],
+    [Todo, {title: "Bar", guid: 11}]
   ], function() {
     var body = {
       todos: [
-        {id: 10, title: "Foo", done: false},
-        {id: 11, title: "Bar", done: true}
+        {guid: 10, title: "Foo", done: false},
+        {guid: 11, title: "Bar", done: true}
       ]
     };
     FakeServer.registerUrl(/\/api\/bulk/, body);

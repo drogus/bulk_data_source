@@ -35,11 +35,7 @@ SC.BulkDataSource = SC.DataSource.extend(
           primaryKey = recordType.prototype.primaryKey;
 
       records.forEach(function(record) {
-        if(primaryKey !== 'id') {
-          record[primaryKey] = record['id'];
-          delete(record['id']);
-        }
-        self.normalizeAssociationsFromServer(store, recordType, record);
+       self.normalizeAssociationsFromServer(store, recordType, record);
       });
 
       store.loadRecords(recordType, records);
