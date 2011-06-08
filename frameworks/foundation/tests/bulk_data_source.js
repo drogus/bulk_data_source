@@ -104,7 +104,7 @@ function createRecords(records, callback) {
 module("BulkDataSource", {
   setup: function() {
     FakeServer.setup();
-    store = SC.Store.create().from('SC.BulkDataSource');
+    store = SC.Store.create().from('BulkApi.BulkDataSource');
     store.commitRecordsAutomatically = true;
     store._getDataSource();
     Todo.resourceName = 'todo';

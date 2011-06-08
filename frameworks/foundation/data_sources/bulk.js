@@ -6,8 +6,11 @@
 */
 sc_require('system/string');
 
-SC.BulkDataSource = SC.DataSource.extend(
-/** @scope SC.BulkDataStore.prototype */ {
+window.BulkApi = window.BulkApi || {};
+
+
+BulkApi.BulkDataSource = SC.DataSource.extend(
+/** @scope BulkApi.BulkDataStore.prototype */ {
   bulkApiUrl: function(store) {
     return store.bulkApiUrl || "/api/bulk";
   },
