@@ -38,11 +38,7 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
           primaryKey = recordType.prototype.primaryKey;
 
       records.forEach(function(record) {
-        if(primaryKey !== 'id') {
-          record[primaryKey] = record['id'];
-          delete(record['id']);
-        }
-        self.normalizeAssociationsFromServer(store, recordType, record);
+       self.normalizeAssociationsFromServer(store, recordType, record);
       });
 
       store.loadRecords(recordType, records);
@@ -64,14 +60,9 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
 
      this.normalizeAssociationsForServer(store, recordType, data);
 
-      if(primaryKey !== 'id') {
-        delete(data[primaryKey]);
-      }
-
       if(records[resourceName] === undefined) {
         records[resourceName] = [];
       }
-      data['id'] = id;
       records[resourceName].push(data);
       if($.inArray(recordType, recordTypes) === -1) {
         recordTypes.push(recordType);
@@ -97,10 +88,9 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
 
         if(records) {
           for(var j = 0; j < records.length; j++) {
-            var storeKey = recordType.storeKeyFor(records[j]["id"]),
-                id = records[j]['id'];
+            var id = records[j][primaryKey],
+                storeKey = recordType.storeKeyFor(id);
 
-            delete(records[j]['id']);
             this.normalizeAssociationsFromServer(store, recordType, records[j]);
             store.dataSourceDidComplete(storeKey, records[j], id);
             usedStoreKeys.push(storeKey);
@@ -164,10 +154,9 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
         if(records) {
           for(var j = 0; j < records.length; j++) {
             var record = records[j],
-                id = record['id'],
+                id = store.idFor(storeKeys[j]),
                 storeKey = recordType.storeKeyFor(id);
 
-            delete(record['id']);
             this.normalizeAssociationsFromServer(store, recordType, record);
             store.dataSourceDidComplete(storeKey, record, id);
             usedStoreKeys.push(storeKey);
@@ -210,7 +199,7 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
                 ids = [];
 
             for(var i = 0; i < records.length; i++) {
-              ids.push(records[i]["id"]);
+              ids.push(records[i][recordType.prototype.primaryKey]);
             }
             data[prop] = ids;
           }
@@ -285,13 +274,11 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
 
         if(records) {
           for(var j = 0; j < records.length; j++) {
-            var record = records[j];
+            var record = records[j], id = record[primaryKey];
 
-            if(record['id'] === null || record['id'] === undefined) {
+            if(id === null || id === undefined) {
               store.dataSourceDidError(record["_local_id"], response);
             } else {
-              var id = record['id'];
-              delete(record['id']);
               this.normalizeAssociationsFromServer(store, recordType, record);
               store.dataSourceDidComplete(record["_local_id"], record, id);
             }
