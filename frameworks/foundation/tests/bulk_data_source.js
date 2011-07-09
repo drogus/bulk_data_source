@@ -15,8 +15,19 @@ Project = SC.Record.extend({
   name: SC.Record.attr(String),
   todos: SC.Record.toMany("Todo", {
     inverse: "project", isMaster: YES
+  }),
+  projectManager: SC.Record.toOne("Person", {
+  	inverse: "managedProjects", isMaster: YES
   })
 });
+
+Person = SC.Record.extend({
+  primaryKey: 'id',
+  fullName: SC.Record.attr(String, { key: "full_name" }),
+  managedProjects: SC.Record.toMany("Project", {
+    inverse: "projectManager", isMaster: NO	
+  })
+})
 
 // this can be changed when sproutcore updates to jquery 1.5
 function when() {
@@ -1008,6 +1019,17 @@ test("sending toOne association", function() {
   equals(data["project_id"], 10);
 });
 
+test("sending toOne snake_case association", function() {
+  var person = store.createRecord(Person, {fullName: "John Doe", id: '10'}),
+      project = store.createRecord(Project, {id: '10', name: "SproutCore", projectManager: person});
+
+  var data = store.readDataHash(project.get("storeKey"));
+  store.get("dataSource").normalizeAssociationsForServer(store, Project, data);
+
+  equals(data["projectManager"], undefined);
+  equals(data["project_manager_id"], 10);
+});
+
 test("sending toMany association", function() {
   var todo = store.createRecord(Todo, {title: "Foo", done: true, id: '10'}),
       project = store.createRecord(Project, {name: "SproutCore", todos: [10]});
@@ -1017,6 +1039,17 @@ test("sending toMany association", function() {
 
   equals(data["todos"], undefined);
   equals(data["todo_ids"][0], '10');
+});
+
+test("sending toMany snake_case association", function() {
+  var project = store.createRecord(Project, {name: "SproutCore", id: '10'}),
+      person = store.createRecord(Person, {fullName: 'John Doe', managedProjects: [10]});
+
+  var data = store.readDataHash(person.get("storeKey"));
+  store.get("dataSource").normalizeAssociationsForServer(store, Person, data);
+
+  equals(data["managedProjects"], undefined);
+  equals(data["managed_project_ids"][0], '10');
 });
 
 test("don't try to save id for a record if it's null", function() {
@@ -1040,6 +1073,17 @@ test("receiving toOne association", function() {
   equals(data["project"], 10);
 });
 
+test("receiving toOne snake_case association", function() {
+  var data = {
+    name: "Something",
+    project_manager_id: 1
+  };
+  store.get("dataSource").normalizeAssociationsFromServer(store, Project, data);
+
+  equals(data["project_manager_id"], undefined);
+  equals(data["projectManager"], 1);
+});
+
 test("receiving toMany association", function() {
   var data = {
     name: "Something",
@@ -1051,6 +1095,17 @@ test("receiving toMany association", function() {
   equals(data["todo_ids"], undefined);
 });
 
+test("receiving toMany snake_case association", function() {
+  var data = {
+    full_name: "John Doe",
+    managed_project_ids: [10]
+  };
+  store.get("dataSource").normalizeAssociationsFromServer(store, Person, data);
+
+  equals(data["managedProjects"][0], 10);
+  equals(data["managed_project_ids"], undefined);
+});
+
 test("receiving toMany association with records", function() {
   var data = {
     name: "Something",
@@ -1060,6 +1115,18 @@ test("receiving toMany association with records", function() {
   store.get("dataSource").normalizeAssociationsFromServer(store, Project, data);
 
   equals(data["todos"][0], 10);
+});
+
+test("receiving toMany snake_case association with records", function() {
+  var data = {
+    full_name: "John Doe",
+    managed_projects: [{"id": "10"}]
+  };
+
+  store.get("dataSource").normalizeAssociationsFromServer(store, Person, data);
+
+  equals(data["managedProjects"][0], 10);
+  equals(data["managed_projects"], undefined);
 });
 
 test("do not try to change ids that are not associations", function() {
