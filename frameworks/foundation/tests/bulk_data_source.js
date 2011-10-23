@@ -125,7 +125,7 @@ test("setting custom resourceName", function() {
 
   var todo = store.createRecord(Todo, {title: "Foo", done: true});
   var body = {
-    'tasks': [{'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}]
+    'tasks': [{guid: 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}]
   };
 
   FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -142,7 +142,7 @@ test("setting custom resourceName", function() {
     equals(SC.json.encode(body), SC.json.encode(expected));
 
     body = {
-      'tasks': [{'id': 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')}]
+      'tasks': [{guid: 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')}]
     };
     FakeServer.registerUrl(/\/api\/bulk/, body);
 
@@ -156,12 +156,12 @@ test("setting custom resourceName", function() {
 
       var body = FakeServer.server.get('lastRequest').get('body'),
           expected = {
-            'tasks': [{'title': 'Bar', done: true, '_local_id': todo.get('storeKey'), 'id': 10}]
+            'tasks': [{guid: 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')}]
           };
       equals(SC.json.encode(body), SC.json.encode(expected));
 
       body = {
-        'tasks': [{'id': 10, 'title': 'Baz', '_local_id': todo.get('storeKey')}]
+        'tasks': [{guid: 10, 'title': 'Baz', '_local_id': todo.get('storeKey')}]
       };
       FakeServer.registerUrl(/\/api\/bulk/, body);
 
@@ -170,7 +170,6 @@ test("setting custom resourceName", function() {
       SC.RunLoop.end();
 
       observeUntilStatus(todo, SC.Record.READY, function() {
-
         equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
 
         var address = FakeServer.server.get('lastRequest').get('address');
@@ -209,7 +208,7 @@ test("setting custom bulk api url", function() {
   store.bulkApiUrl = "/buahahahaha";
   var todo = store.createRecord(Todo, {title: "Foo", done: true});
   var body = {
-    'todos': [{'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}]
+    'todos': [{guid: 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}]
   };
 
   FakeServer.registerUrl(/\/buahahahaha/, body);
@@ -220,7 +219,7 @@ test("setting custom bulk api url", function() {
     equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
 
     var body = {
-      'todos': [{'id': 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')}]
+      'todos': [{guid: 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')}]
     };
     FakeServer.registerUrl(/\/buahahahaha/, body);
 
@@ -233,7 +232,7 @@ test("setting custom bulk api url", function() {
       equals(store.statusString(todo.get('storeKey')), 'READY_CLEAN');
 
       var body = {
-        'todos': [{'id': 10, 'title': 'Baz', '_local_id': todo.get('storeKey')}]
+        'todos': [{guid: 10, 'title': 'Baz', '_local_id': todo.get('storeKey')}]
       };
       FakeServer.registerUrl(/\/buahahahaha/, body);
 
@@ -272,7 +271,7 @@ test("createRecords: pass _local_id on create (for records identification)", fun
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
       {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
@@ -305,7 +304,6 @@ test("createRecords: pass _local_id on create (for records identification)", fun
   });
 });
 
-
 test("createRecords: call dataSourceDidError on invalid records", function() {
   expect(14);
   stop(timeLimit);
@@ -319,7 +317,7 @@ test("createRecords: call dataSourceDidError on invalid records", function() {
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')},
+      {guid: 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')},
       {'title': 'I\'m bad', done: false, '_local_id': invalidTodo.get('storeKey')}
     ], 'projects': [
       {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') },
@@ -442,7 +440,7 @@ test("destroying records", function() {
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
       {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
@@ -496,7 +494,7 @@ test("destroyRecords: call dataSourceDidError on invalid records", function() {
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
       {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
@@ -546,7 +544,7 @@ test("destroyRecords: call dataSourceDidError on records that were not given in 
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
       {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
@@ -579,7 +577,6 @@ test("destroyRecords: call dataSourceDidError on records that were not given in 
   });
 });
 
-
 test("destroyRecords: call dataSourceDidError on all records in case of not valid response", function() {
   expect(2);
   stop(timeLimit);
@@ -590,7 +587,7 @@ test("destroyRecords: call dataSourceDidError on all records in case of not vali
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
       {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
@@ -628,13 +625,13 @@ test("fetching records", function() {
   stop(timeLimit);
 
   createRecords([
-    [Todo, {title: "Foo", id: 10}],
-    [Todo, {title: "Bar", id: 11}]
+    [Todo, {title: "Foo", guid: 10}],
+    [Todo, {title: "Bar", guid: 11}]
   ], function() {
     var body = {
       todos: [
-        {id: 10, title: "Foo", done: false},
-        {id: 11, title: "Bar", done: true}
+        {guid: 10, title: "Foo", done: false},
+        {guid: 11, title: "Bar", done: true}
       ]
     };
     FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -676,9 +673,9 @@ test("retrieving records", function() {
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, title: 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
-      {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
+      {id: 5, name: "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
   };
   FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -690,7 +687,7 @@ test("retrieving records", function() {
     observeUntilStatus(project, SC.Record.READY, function() {})
   ).then(function() {
     var body = {
-      'todos':    [ {'id': 10, 'title': 'Bar', done: false, '_local_id': todo.get('storeKey')} ],
+      'todos':    [ {guid: 10, 'title': 'Bar', done: false, '_local_id': todo.get('storeKey')} ],
       'projects': [ {'id': 5,  'name': 'jQuery todos', '_local_id': project.get('storeKey')} ]
     };
     FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -725,9 +722,9 @@ test("retrieveRecords: call dataSourceDidError on records not present in respons
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, title: 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
-      {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
+      {id: 5, name: "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
   };
   FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -768,9 +765,9 @@ test("retrieveRecords: call dataSourceDidError on all records in case of not val
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, title: 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
-      {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
+      {id: 5, name: "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
   };
   FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -811,9 +808,9 @@ test("updating records", function() {
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, title: 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
-      {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
+      {id: 5, name: "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
   };
   FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -825,7 +822,7 @@ test("updating records", function() {
     observeUntilStatus(project, SC.Record.READY, function() {})
   ).then(function() {
     var body = {
-      'todos': [ {'id': 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')} ]
+      'todos': [ {guid: 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')} ]
     };
     FakeServer.registerUrl(/\/api\/bulk/, body);
 
@@ -840,7 +837,7 @@ test("updating records", function() {
       var request = FakeServer.server.get('lastRequest');
       var body = {
         'todos': [
-          {'title': 'Bar', done: true, '_local_id': todo.get('storeKey'), 'id': 10}
+          {guid: 10, title: 'Bar', done: true, '_local_id': todo.get('storeKey')}
         ]
       };
       equals(SC.json.encode(body), SC.json.encode(request.get('body')));
@@ -850,7 +847,6 @@ test("updating records", function() {
     });
   });
 });
-
 
 test("updateRecords: call dataSourceDidError on invalid records", function() {
   expect(3);
@@ -863,10 +859,10 @@ test("updateRecords: call dataSourceDidError on invalid records", function() {
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')},
-      {'id': 11, 'title': 'Bar', done: true, '_local_id': todo2.get('storeKey')}
+      {guid: 10, title: 'Foo', done: true, '_local_id': todo.get('storeKey')},
+      {guid: 11, title: 'Bar', done: true, '_local_id': todo2.get('storeKey')}
     ], 'projects': [
-      {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
+      {id: 5, name: "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
   };
   FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -880,9 +876,9 @@ test("updateRecords: call dataSourceDidError on invalid records", function() {
   ).then(function() {
     var body = {
       'todos': [
-        {'id': 10, 'title': 'Bar', done: true, '_local_id': todo.get('storeKey')}
+        {guid: 10, title: 'Bar', done: true, '_local_id': todo.get('storeKey')}
       ], 'projects': [
-        {'id': 5, 'name': "jQuery todos", '_local_id': project.get('storeKey') }
+        {id: 5, name: "jQuery todos", '_local_id': project.get('storeKey') }
       ],
       'errors': { 'todos': {} }
     };
@@ -921,9 +917,9 @@ test("updateRecords: call dataSourceDidError on records not present in response"
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, title: 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
-      {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
+      {id: 5, name: "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
   };
   FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -964,9 +960,9 @@ test("updateRecords: call dataSourceDidError on all records in case of not valid
 
   var body = {
     'todos': [
-      {'id': 10, 'title': 'Foo', done: true, '_local_id': todo.get('storeKey')}
+      {guid: 10, title: 'Foo', done: true, '_local_id': todo.get('storeKey')}
     ], 'projects': [
-      {'id': 5, 'name': "Sproutcore todos", '_local_id': project.get('storeKey') }
+      {'id': 5, name: "Sproutcore todos", '_local_id': project.get('storeKey') }
     ]
   };
   FakeServer.registerUrl(/\/api\/bulk/, body);
@@ -1009,7 +1005,7 @@ test("sending toOne association", function() {
 });
 
 test("sending toMany association", function() {
-  var todo = store.createRecord(Todo, {title: "Foo", done: true, id: '10'}),
+  var todo = store.createRecord(Todo, {title: "Foo", done: true, guid: '10'}),
       project = store.createRecord(Project, {name: "SproutCore", todos: [10]});
 
   var data = store.readDataHash(project.get("storeKey"));
@@ -1020,7 +1016,7 @@ test("sending toMany association", function() {
 });
 
 test("don't try to save id for a record if it's null", function() {
-  var todo = store.createRecord(Todo, {title: "Foo", done: true, id: '10', project: null});
+  var todo = store.createRecord(Todo, {title: "Foo", done: true, guid: '10', project: null});
 
   var data = store.readDataHash(todo.get("storeKey"));
   store.get("dataSource").normalizeAssociationsForServer(store, Todo, data);
@@ -1054,7 +1050,7 @@ test("receiving toMany association", function() {
 test("receiving toMany association with records", function() {
   var data = {
     name: "Something",
-    todos: [{"id": "10"}]
+    todos: [{id: "10"}]
   };
 
   store.get("dataSource").normalizeAssociationsFromServer(store, Project, data);
