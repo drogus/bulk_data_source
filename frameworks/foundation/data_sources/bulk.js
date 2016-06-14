@@ -178,7 +178,7 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
     for(var prop in data) {
       var match;
       if(prop !== "_local_id" && (match = prop.match(/(.*)_(ids?)$/))) {
-        var association = match[1],
+        var association = match[1].camelize(),
             type = match[2],
             value = data[prop];
 
@@ -192,7 +192,8 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
           data[association] = value;
         }
       } else {
-        attrType = recordType.prototype[prop];
+        association = prop.camelize();
+        attrType = recordType.prototype[association];
         if(attrType && attrType.kindOf) {
           if(attrType.kindOf(SC.ManyAttribute)) {
             var records = data[prop],
@@ -201,7 +202,8 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
             for(var i = 0; i < records.length; i++) {
               ids.push(records[i][recordType.prototype.primaryKey]);
             }
-            data[prop] = ids;
+            delete(data[prop]);
+            data[association] = ids;
           }
         }
       }
@@ -218,13 +220,13 @@ BulkApi.BulkDataSource = SC.DataSource.extend(
             var value = data[prop];
             delete(data[prop]);
             if(value) {
-              data[prop + '_id'] = value.get ? store.idFor(value.get("storeKey")) : value;
+              data[prop.decamelize() + '_id'] = value.get ? store.idFor(value.get("storeKey")) : value;
             }
           } else if(attrType.kindOf(SC.ManyAttribute)) {
             var ids = data[prop],
                 manyRecordType = attrType.get('typeClass');
             delete(data[prop]);
-            data[manyRecordType.resourceName + "_ids"] = ids;
+            data[prop.singularize().decamelize() + "_ids"] = ids;
           }
         }
       }
